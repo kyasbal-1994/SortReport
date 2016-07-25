@@ -1,6 +1,9 @@
 package ss.sort;
-
 import java.io.*;
+
+interface Delegate<T, R> {
+    public R invoke(T arg);
+}
 
 class ScoreElement{
     public int id;
@@ -39,7 +42,7 @@ class ScoreElement{
         }else{
             if(prev == null)prev = elem;
             else{
-                if(elem.getCriteria() < prev.getCriteria())
+                if(elem.getCriteria() > prev.getCriteria())
                 {
                     elem.insert(prev);
                     prev = elem;
@@ -49,6 +52,24 @@ class ScoreElement{
             }
         }
     }
+
+    public void enumerate(Delegate<ScoreElement,Boolean> handler){
+        this.enumerate(handler,this);
+    }
+
+    private boolean enumerate(Delegate<ScoreElement,Boolean> handler,ScoreElement current){
+        if(current.next!=null && !enumerate(handler,current.next)){
+            return false;
+        }
+        if(!handler.invoke(current)){
+            return false;
+        }
+        if(current.prev!=null && !enumerate(handler,current.prev)){
+            return false;
+        }
+        return true;
+    }
+
 }
 
 public class Main {
@@ -93,5 +114,31 @@ public class Main {
         {
             firstElem.insert(s);
         }
+
+        firstElem.enumerate(new Delegate<ScoreElement, Boolean>() {
+
+            private int lastScore = -1;
+
+            private int lastRanking = 0;
+
+            private int sameScoreCount  = 1;
+
+            @Override
+            public Boolean invoke(ScoreElement arg) {
+                if(arg.sum != lastScore){
+                    lastRanking += sameScoreCount;
+                    sameScoreCount = 1;
+                    lastScore = arg.sum;
+                }else{
+                    sameScoreCount ++;
+                }
+                if(lastRanking <=300) {
+                    System.out.printf("%d %d %d %s\n", lastRanking, arg.id, arg.sum, arg.rika);
+                    return true;
+                }else{
+                    return false;
+                }
+            }
+        });
     }
 }
